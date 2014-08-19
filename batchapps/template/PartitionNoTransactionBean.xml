@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation=
+       "http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
+
+  <!-- プレースホルダ -->
+  <import resource="classpath:common/PlaceHolderConfig.xml" />
+
+  <!-- ===================== マネージャ定義 ===================== -->
+  <!-- ジョブ分割を行う親ジョブのマネージャ -->
+  <bean id="jobManager" parent="baseManager">
+    <property name="name" value="partitionNoTransactionJobManager" />
+    <property name="collector" ref="partitionkeyCollector" />
+    <property name="workQueueFactory">
+      <bean class="${workQueueFactory.class}">
+        <property name="workerExecutorService" ref="workerExecutorService" />
+        <property name="queueProcessor" ref="partitionNoTransactionQueueProcessor" />
+        <property name="queueLength" ref="partitionQueueLength" />
+        <property name="multiplicity" ref="multiplicity" />
+      </bean>
+    </property>
+    <!-- 親ジョブ前処理 -->
+    <property name="preProcessor" ref="parentJobPreProcessor" />
+    <!-- 親ジョブ後処理 -->
+    <property name="postProcessor" ref="parentJobPostProcessor" />
+      
+  </bean>
+
+  <!-- 親ジョブ前処理 -->
+  <bean id="parentJobPreProcessor" parent="standardSupportProcessor">
+    <property name="supportProcessorName" ref="parentJobPreProcessorName" />
+    <property name="supportLogicList" ref="parentjobPreLogicList" />
+  </bean>
+
+  <!-- 親ジョブ後処理 -->
+  <bean id="parentJobPostProcessor" parent="standardSupportProcessor">
+    <property name="supportProcessorName" ref="parentJobPostProcessorName" />
+    <property name="supportLogicList" ref="parentjobPostLogicList" />
+  </bean>
+
+  <!-- ===================== キュープロセッサ定義 ===================== -->
+  <bean id="partitionNoTransactionQueueProcessor" parent="baseQueueProcessor">
+    <property name="name" value="partitionNoTransactionQueueProcessor" />
+    <property name="worker" ref="childJobManager" />
+  </bean>
+
+  <!-- 子ジョブのマネージャ -->
+  <bean id="childJobManager" parent="baseManager">
+    <property name="name" value="childJobManager" />
+    <property name="collector" ref="collector" />
+    <property name="workQueueFactory">
+      <bean class="${workQueueFactory.class}">
+        <property name="workerExecutorService" ref="workerExecutorService" />
+        <property name="queueProcessor" ref="partitionNoTransactionChildQueueProcessor" />
+        <property name="queueLength" ref="chunkQueueLength" />
+      </bean>
+    </property>
+    <!-- ジョブ前処理 -->
+    <property name="preProcessor" ref="jobPreProcessor" />
+    <!-- ジョブ後処理 -->
+    <property name="postProcessor" ref="jobPostProcessor" />
+  </bean>
+
+  <!-- ジョブ前処理 -->
+  <bean id="jobPreProcessor" parent="standardSupportProcessor">
+    <property name="supportProcessorName" ref="jobPreProcessorName" />
+    <property name="supportLogicList" ref="jobPreLogicList" />
+  </bean>
+
+
+  <!-- ジョブ後処理 -->
+  <bean id="jobPostProcessor" parent="standardSupportProcessor">
+    <property name="supportProcessorName" ref="jobPostProcessorName" />
+    <property name="supportLogicList" ref="jobPostLogicList" />
+  </bean>
+
+  <!-- ===================== キュープロセッサ定義 ===================== -->
+  <bean id="partitionNoTransactionChildQueueProcessor" parent="baseQueueProcessor">
+    <property name="name" value="partitionNoTransactionChildQueueProcessor" />
+    <property name="worker" ref="noTransactionWorker" />
+  </bean>
+
+  <!-- ===================== ワーカ定義 ===================== -->
+  <bean id="noTransactionWorker" class="jp.terasoluna.fw.batch.core.JobWorker">
+    <property name="blogicExecutor" ref="blogicExecutor" />
+    <property name="exceptionHandlerMap" ref="exceptionHandlerMap" />
+    <property name="defaultJobExceptionHandler" ref="defaultJobExceptionHandler" />
+    <property name="batchUpdateProcessor" ref="batchUpdateProcessor" />
+    <property name="batchUpdateResultHandler" ref="batchUpdateResultHandler" />
+    <property name="throwableHandler" ref="throwableHandler" />
+  </bean>
+
+  <bean id="batchUpdateProcessor" class="jp.terasoluna.fw.batch.standard.StandardBatchUpdateProcessor">
+    <property name="updateDAO" ref="updateDAO" />
+  </bean>
+      
+  <bean id="blogicExecutor" class="jp.terasoluna.fw.batch.core.StandardBLogicExecutor">
+    <property name="blogic" ref="blogic" />
+    <property name="blogicResultHandler" ref="BLogicResultHandler" />
+    <property name="exceptionHandlerMap" ref="exceptionHandlerMap" />
+    <property name="defaultJobExceptionHandler" ref="defaultJobExceptionHandler" />
+    <property name="throwableHandler" ref="throwableHandler" />
+  </bean>
+  
+  <!-- JobStatus設定 -->
+  <bean id="MonitorableJobStatus" class="jp.terasoluna.fw.batch.monitor.MonitorableJobStatus" scope="prototype">
+    <property name="mbeanRegister" ref="MBeanRegister" />
+    <property name="partitionNo" value="-1" />
+  </bean>
+  
+  <bean id="JobStatus" class="jp.terasoluna.fw.batch.core.JobStatus" scope="prototype">
+    <property name="partitionNo" value="-1" />
+  </bean>
+
+  <!-- ===================== スレッドプール作成時のサイズ ===================== -->
+  <bean id="threadSize" class="jp.terasoluna.fw.batch.springsupport.standard.ThreadSizeFactoryBean">
+    <property name="multiplicity" ref="multiplicity" />
+  </bean>
+</beans>

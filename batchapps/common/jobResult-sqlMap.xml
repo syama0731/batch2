@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap
+ PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+ "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="jobResult">
+  <typeAlias alias="jobControlInfo" type="jp.terasoluna.fw.batch.init.JobControlInfo" />
+  <!-- ジョブ結果登録 -->
+  <insert id="INSERT_JOB_RESULT" parameterClass="jobControlInfo">
+    INSERT INTO 
+        JOB_RESULT (REQUEST_NO, JOB_ID, JOB_STATE, END_CODE, REGISTER_TIME)
+    VALUES (#jobRequestNo#,  #jobId#, #jobState#, #jobExitCode#,  current_timestamp)
+  </insert>
+
+</sqlMap>

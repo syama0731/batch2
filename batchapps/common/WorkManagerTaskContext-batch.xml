@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation=
+       "http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
+
+  <!-- プレースホルダ -->
+  <import resource="classpath:common/PlaceHolderConfig.xml" />
+    
+  <!-- ===================== WorkExecutor定義 ===================== -->
+  <!-- Work管理 Bean -->
+  <bean id="workerExecutorService"
+        class="jp.terasoluna.fw.batch.commonj.WorkManagerExecutorService">
+    <property name="defaultJobExceptionHandler" ref="defaultJobExceptionHandler" />
+    <property name="exceptionHandlerMap" ref="exceptionHandlerMap" />
+    <property name="workManager" ref="taskExecutor" />
+    <property name="workMapListener" ref="workListener" />
+    <property name="throwableHandler" ref="throwableHandler" />
+  </bean>
+    
+  <!-- タスクマネージャ -->
+  <bean id="taskExecutor"
+        class="org.springframework.scheduling.commonj.WorkManagerTaskExecutor">
+    <property name="workManagerName" value="${workManagerName}" />
+    <property name="resourceRef" value="true" />
+    <property name="jndiTemplate" ref="jndiTemplateForWorkManager" />
+  </bean>
+  
+  <!-- ワークリスナー -->
+  <bean id="workListener"
+        class="jp.terasoluna.fw.batch.commonj.listener.WorkQueueListener" />
+ 
+  <!-- ===================== 監視(File)定義 ===================== -->
+  <!-- リスナー定義 -->
+  <!-- ※Commonj対応機能を使用する際にはWorkManagerTaskContext-batch.xmlの
+       設定が有効になるためDefaultValueBean.xmlの設定は無効になる -->
+  <bean id="scheduledTask" class="org.springframework.scheduling.commonj.ScheduledTimerListener">
+    <!-- 8秒ごとにセット -->
+    <property name="delay" value="0" />
+    <property name="period" value="8000" />
+    <property name="fixedRate" value="false" />
+    <property name="runnable" ref="endFileChecker" />
+  </bean>
+  
+  <!-- タイマーマネージャファクトリ定義 -->
+  <!-- ※Commonj対応機能を使用する際にはWorkManagerTaskContext-batch.xmlの
+       設定が有効になるためDefaultValueBean.xmlの設定は無効になる -->
+  <bean id="timerFactory" 
+        class="org.springframework.scheduling.commonj.TimerManagerFactoryBean">
+    <property name="timerManagerName" value="${timerManagerName}" />
+    <property name="resourceRef" value="true" />
+    <property name="shared" value="true" />
+    <property name="scheduledTimerListeners">
+      <list>
+        <ref bean="scheduledTask" />
+      </list>
+    </property>
+    <property name="jndiTemplate" ref="jndiTemplateForTimerManager" />
+  </bean>
+
+</beans>

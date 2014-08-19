@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation=
+       "http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
+
+  <!-- プレースホルダ -->
+  <import resource="classpath:common/PlaceHolderConfig.xml" />
+    
+  <!-- ===================== マネージャ定義 ===================== -->
+  <!-- 非同期バッチ起動用のマネージャ -->
+  <bean id="jobManager" parent="baseManager">
+    <property name="name" value="AsyncBatchDaemonManager" />
+    <property name="collector" ref="batchDaemonJobCollector" />
+    <property name="workQueueFactory">
+      <bean class="${workQueueFactory.class}">
+        <property name="workerExecutorService" ref="workerExecutorService" />
+        <property name="queueProcessor" ref="asyncBatchDaemonQueueProcessor" />
+        <property name="queueLength" value="10" />
+        <property name="multiplicity" ref="multiplicity" />
+      </bean>
+    </property>
+    <!-- 親ジョブ前処理 -->
+    <property name="preProcessor" ref="parentJobPreProcessor" />
+    <!-- 親ジョブ後処理 -->
+    <property name="postProcessor" ref="parentJobPostProcessor" />
+  </bean>
+
+  <!-- 親ジョブ前処理 -->
+  <bean id="parentJobPreProcessor" parent="transactionalSupportProcessor">
+    <property name="supportProcessor">
+      <bean parent="standardSupportProcessor">
+        <property name="supportProcessorName" ref="parentJobPreProcessorName" />
+      </bean>
+    </property>
+  </bean>
+
+  <!-- 親ジョブ後処理 -->
+  <bean id="parentJobPostProcessor" parent="transactionalSupportProcessor">
+    <property name="supportProcessor">
+      <bean parent="standardSupportProcessor">
+        <property name="supportProcessorName" ref="parentJobPostProcessorName" />
+      </bean>
+    </property>
+  </bean>
+
+  <!-- ===================== キュープロセッサ定義 ===================== -->
+  <!-- 非同期用キュープロセッサ -->
+  <bean id="asyncBatchDaemonQueueProcessor" parent="baseQueueProcessor">
+    <property name="name" value="asyncBatchDaemonQueueProcessor" />
+    <property name="worker" ref="childJobManager" />
+  </bean>
+
+  <!-- バッチ起動用ワーカ -->
+  <bean id="childJobManager" class="jp.terasoluna.fw.batch.commonj.init.JobExecutor">
+    <constructor-arg value="/common/FrameworkBean.xml,/common/dataAccessContext-batch.xml,/common/WorkManagerTaskContext-batch.xml,/common/ValidationContext-AsyncBatch.xml" />
+    <property name="async" value="true" />
+    <!-- 親ジョブ前処理 -->
+    <property name="preJobProcessor" ref="preJobProcessor" />
+    <!-- 親ジョブ後処理 -->
+    <property name="postJobProcessor" ref="postJobProcessor" />
+    <!-- ジョブパラメータの区切り文字 -->
+    <property name="jobParametersSplitStr" value="," />
+    <!-- Throwableハンドラ -->
+    <property name="throwableHandler" ref="throwableHandler" />
+  </bean>
+
+  <!-- ジョブ前処理 -->
+  <bean id="preJobProcessor" parent="transactionalSupportProcessor">
+    <property name="supportProcessor">
+      <bean parent="standardSupportProcessor">
+        <property name="supportProcessorName" ref="jobPreProcessorName" />
+        <property name="supportLogicList">
+          <list>
+            <bean class="jp.terasoluna.fw.batch.springsupport.init.AsyncJobPreLogic" />
+          </list>
+        </property>
+      </bean>
+    </property>
+  </bean>
+
+  <!-- ジョブ後処理 -->
+  <bean id="postJobProcessor" parent="transactionalSupportProcessor">
+    <property name="supportProcessor">
+      <bean parent="standardSupportProcessor">
+        <property name="supportProcessorName" ref="jobPostProcessorName" />
+        <property name="supportLogicList">
+          <list>
+            <bean class="jp.terasoluna.fw.batch.springsupport.init.AsyncJobPostLogic">
+              <property name="jobControlTableHandler" ref="JobControlTableHandler" />
+            </bean>
+          </list>
+        </property>
+      </bean>
+    </property>
+  </bean>
+
+  <!-- コレクタ -->
+  <bean id="batchDaemonJobCollector" class="jp.terasoluna.fw.batch.init.JobRequestInfoCollector">
+    <property name="collectedDataHandlerFactory">
+      <bean class="jp.terasoluna.fw.batch.init.JobRequestInfoHandlerFactory" />
+    </property>
+    <property name="jobControlTableHandler" ref="JobControlTableHandler" />
+    <property name="intervalSeconds" value="10" />
+    <property name="refreshCount" value="20" />
+  </bean>
+  
+  <!-- ======================= JobStatus設定 ================================-->
+  <!-- JMX用JobStatus -->
+  <bean id="MonitorableJobStatus" class="jp.terasoluna.fw.batch.monitor.MonitorableTransactionalJobStatus" scope="prototype">
+    <property name="mbeanRegister" ref="MBeanRegister" />
+    <property name="transactionManager" ref="transactionManager" />
+    <property name="useSavepoint" ref="useSavepoint" />
+    <property name="partitionNo" value="-1" />
+  </bean>
+  
+  <!-- トランザクション情報保持用JobStatus -->
+  <bean id="JobStatus" class="jp.terasoluna.fw.batch.springsupport.transaction.TransactionalJobStatus" scope="prototype">
+    <property name="transactionManager" ref="transactionManager" />
+    <property name="useSavepoint" ref="useSavepoint" />
+    <property name="partitionNo" value="-1" />
+  </bean>
+
+  <!-- ジョブ監視の有無 -->
+  <util:constant id="useMonitorable" static-field="java.lang.Boolean.FALSE" />
+
+  <!-- ===================== ジョブ管理テーブル用ハンドラ ===================== -->
+  <!-- ジョブ依頼情報取得・更新用ハンドラ -->
+  <bean id="JobControlTableHandler" class="jp.terasoluna.fw.batch.init.JobControlTableHandlerImpl">
+    <property name="queryDAO" ref="queryDAO" />
+    <property name="updateDAO" ref="updateDAO" />
+  </bean>
+ 
+  <!-- ===================== スレッドプール作成時のサイズ ===================== -->
+  <!-- スレッドプールのサイズ生成用Bean -->
+  <bean id="threadSize" class="jp.terasoluna.fw.batch.springsupport.standard.ThreadSizeFactoryBean">
+    <property name="multiplicity" ref="multiplicity" />
+  </bean>
+  
+  <!-- 多重度 -->
+  <bean id="multiplicity" class="java.lang.Integer">
+    <constructor-arg value="3" />
+  </bean>
+  
+</beans>

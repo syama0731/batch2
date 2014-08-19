@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation=
+       "http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
+
+  <!-- プレースホルダ -->
+  <import resource="classpath:common/PlaceHolderConfig.xml" />
+    
+  <!-- ========================= デフォルト値のインポート ========================= -->
+  <import resource="classpath:common/DefaultValueBean.xml" />
+
+  <!-- ========================= リソース定義 ========================= -->
+  <!-- リソースバンドルの設定（ファイルメッセージリソース利用時）  -->
+  <bean id="messageSource" 
+        class="org.springframework.context.support.ResourceBundleMessageSource">
+    <property name="basenames" value="ApplicationResources,system-messages,application-messages" />
+  </bean>
+
+  <!-- メッセージ取得用クラスの設定 -->
+  <bean id="messageAccessor"
+        class="jp.terasoluna.fw.batch.springsupport.messages.MessageAccessorImpl" />
+      
+  <!-- トレース処理の設定 -->
+  <bean id="debug" class="org.springframework.aop.interceptor.DebugInterceptor" />
+
+  <!-- 基本ジョブコンテクストの定義 -->
+  <bean name="jobContext" class="jp.terasoluna.fw.batch.openapi.JobContext" scope="prototype"/>
+  
+  <!-- ===================== コレクタ定義 ===================== -->
+  <!-- iBatisデータベース分割キーコレクタ -->
+  <bean id="IBatisDbPartitionKeyCollector" class="jp.terasoluna.fw.batch.ibatissupport.IBatisDbCollectorImpl" abstract="true">
+    <property name="queryRowHandleDAO" ref="queryRowHandleDAO" />
+    <property name="collectedDataHandlerFactory">
+      <bean class="jp.terasoluna.fw.batch.partition.PartitionKeyHandlerFactory" />
+    </property>
+  </bean>
+
+  <!-- リストプロパティ分割キーコレクタ -->
+  <bean id="listPropertyPartitionKeyCollector"
+        class="jp.terasoluna.fw.batch.standard.ListPropertyCollector" abstract="true">
+    <property name="collectedDataHandlerFactory">
+      <bean class="jp.terasoluna.fw.batch.partition.PartitionKeyHandlerFactory" />
+    </property>
+  </bean>
+
+  <!-- 文字列配列プロパティ分割キーコレクタ -->
+  <bean id="stringArrayPropertyPartitionKeyCollector" 
+        class="jp.terasoluna.fw.batch.standard.StringArrayPropertyCollector" abstract="true">
+    <property name="collectedDataHandlerFactory">
+      <bean class="jp.terasoluna.fw.batch.partition.PartitionKeyHandlerFactory" />
+    </property>
+  </bean>
+  
+  <!--  ファイル分割キーコレクタ -->
+  <bean id="filePartitionKeyCollector"
+        class="jp.terasoluna.fw.batch.standard.StandardFileCollector" abstract="true">
+    <property name="collectedDataHandlerFactory">
+      <bean class="jp.terasoluna.fw.batch.partition.PartitionKeyHandlerFactory" />
+    </property>
+  </bean>
+
+  <!-- リストプロパティチャンクコレクタ -->
+  <bean id="listPropertyChunkCollector"
+        class="jp.terasoluna.fw.batch.standard.ListPropertyCollector" abstract="true">
+    <property name="collectedDataHandlerFactory">
+      <bean class="jp.terasoluna.fw.batch.standard.ChunkerFactory">
+        <property name="chunkSize" ref="chunkSize" />
+      </bean>
+    </property>
+  </bean>
+
+  <!-- 文字列配列プロパティチャンクコレクタ -->
+  <bean id="stringArrayPropertyChunkCollector" 
+        class="jp.terasoluna.fw.batch.standard.StringArrayPropertyCollector" abstract="true">
+    <property name="collectedDataHandlerFactory">
+      <bean class="jp.terasoluna.fw.batch.standard.ChunkerFactory">
+        <property name="chunkSize" ref="chunkSize" />
+      </bean>
+    </property>
+  </bean>
+
+  <!-- Bean「listPropertyChunkCollector」のリファクタリング前のBean、推奨されていません。 -->
+  <bean id="listPropertyCollector"
+        class="jp.terasoluna.fw.batch.standard.ListPropertyCollector" abstract="true" 
+        parent="listPropertyChunkCollector" />
+    
+  <!--  Bean「stringArrayPropertyChunkCollector」のリファクタリング前のBean、推奨されていません。-->
+  <bean id="stringArrayPropertyCollector" 
+        class="jp.terasoluna.fw.batch.standard.StringArrayPropertyCollector" abstract="true"
+        parent="stringArrayPropertyChunkCollector" />
+
+  <!-- iBatisデータベースチャンクコレクタ -->
+  <bean id="IBatisDbChunkCollector"
+        class="jp.terasoluna.fw.batch.ibatissupport.IBatisDbCollectorImpl"
+        abstract="true">
+    <property name="queryRowHandleDAO" ref="queryRowHandleDAO" />
+    <property name="collectedDataHandlerFactory">
+      <bean class="jp.terasoluna.fw.batch.standard.ChunkerFactory">
+        <property name="chunkSize" ref="chunkSize" />
+      </bean>
+    </property>
+  </bean>
+
+  <!--  コントロールブレイクiBatisDBチャンクコレクタ -->
+  <bean id="controlBreakIBatisDbChunkCollector"
+        class="jp.terasoluna.fw.batch.ibatissupport.IBatisDbCollectorImpl"
+        abstract="true">
+    <property name="queryRowHandleDAO" ref="queryRowHandleDAO" />
+    <property name="collectedDataHandlerFactory">
+      <bean class="jp.terasoluna.fw.batch.controlbreak.ControlBreakChunkerFactory">
+        <property name="controlBreakDef" ref="controlBreakDef" />
+        <property name="chunkSize" ref="chunkSize" />
+      </bean>
+    </property>
+  </bean>
+
+  <!-- ファイルチャンクコレクタ -->
+  <bean id="fileChunkCollector"
+        class="jp.terasoluna.fw.batch.standard.StandardFileCollector" abstract="true">
+    <property name="collectedDataHandlerFactory">
+      <bean class="jp.terasoluna.fw.batch.standard.ChunkerFactory">
+        <property name="chunkSize" ref="chunkSize" />
+      </bean>
+    </property>
+  </bean>
+
+  <!-- 全件取得用 -->
+  <bean id="IBatisDbChunkCollectorWithoutRowHandler"
+        class="jp.terasoluna.fw.batch.ibatissupport.IBatisDbCollectorImplWithoutRowHandler"
+        abstract="true">
+    <property name="queryRowHandleDAO" ref="queryRowHandleDAO" />
+    <property name="collectedDataHandlerFactory">
+      <bean class="jp.terasoluna.fw.batch.standard.ChunkerFactory">
+        <property name="chunkSize" ref="chunkSize" />
+      </bean>
+    </property>
+  </bean>
+
+  <!-- 1:N取得用 -->
+  <bean id="IBatisDb1NRelationChunkCollector"
+        class="jp.terasoluna.fw.batch.ibatissupport.IBatisDb1NRelationCollectorImpl"
+        abstract="true">
+    <property name="queryRowHandleDAO" ref="queryRowHandleDAO" />
+    <property name="collectedDataHandlerFactory">
+      <bean class="jp.terasoluna.fw.batch.standard.ChunkerFactory">
+        <property name="chunkSize" ref="chunkSize" />
+      </bean>
+    </property>
+  </bean>
+  
+  <!-- ===================== ジョブマネージャ定義 ===================== -->
+  <bean id="baseManager" class="jp.terasoluna.fw.batch.core.JobManager" abstract="true">
+    <property name="collectorResultHandler" ref="CollectorResultHandler" />
+    <property name="exceptionHandlerMap" ref="exceptionHandlerMap" />
+    <property name="defaultJobExceptionHandler" ref="defaultJobExceptionHandler" />
+    <property name="throwableHandler" ref="throwableHandler" />
+  </bean>
+  
+  <!-- ===================== ジョブワーカ定義 ===================== -->
+  <bean id="baseWorker" class="jp.terasoluna.fw.batch.core.JobWorker" abstract="true">
+    <property name="batchUpdateResultHandler" ref="batchUpdateResultHandler" />
+    <property name="defaultJobExceptionHandler" ref="defaultJobExceptionHandler" />
+    <property name="exceptionHandlerMap" ref="exceptionHandlerMap" />
+    <property name="throwableHandler" ref="throwableHandler" />
+  </bean>
+
+  <bean id="baseQueueProcessor" class="${baseQueueProcessor.class}" abstract="true" />
+
+  <!-- ===================== 監視(JMX)定義 ===================== -->
+  <bean id="MBeanRegister"
+        class="jp.terasoluna.fw.batch.monitor.MBeanRegister">
+    <property name="manageableJobSize" ref="manageableJobSize">
+    </property>
+  </bean>
+
+  <!-- ===================== サポートプロセッサ ===================== -->
+  <!-- トランザクション処理を行うサポートプロセッサ -->
+  <bean id="transactionalSupportProcessor"
+        class="jp.terasoluna.fw.batch.springsupport.transaction.TransactionalSupportProcessor"
+        abstract="true" />
+
+  <!-- トランザクション処理を行う標準サポートプロセッサ  -->
+  <bean id="transactionalStandardSupportProcessor" class="jp.terasoluna.fw.batch.standard.StandardSupportProcessor"
+        abstract="true">
+    <property name="supportLogicResultHandler" ref="transactionalSupportLogicResultHandler" />
+    <property name="defaultJobExceptionHandler" ref="defaultJobExceptionHandler" />
+    <property name="exceptionHandlerMap" ref="exceptionHandlerMap" />
+    <property name="throwableHandler" ref="throwableHandler" />
+  </bean>
+
+  <!-- 標準サポートプロセッサ -->
+  <bean id="standardSupportProcessor" class="jp.terasoluna.fw.batch.standard.StandardSupportProcessor"
+        abstract="true">
+    <property name="supportLogicResultHandler" ref="supportLogicResultHandler" />
+    <property name="defaultJobExceptionHandler" ref="defaultJobExceptionHandler" />
+    <property name="exceptionHandlerMap" ref="exceptionHandlerMap" />
+    <property name="throwableHandler" ref="throwableHandler" />
+  </bean>
+</beans>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation=
+       "http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
+  
+  <!-- ===================== 入力チェック用Validation定義 ===================== -->
+  <bean id="validatorFactory" class="jp.terasoluna.fw.validation.springmodules.DefaultValidatorFactoryEx" abstract="true">
+    <property name="validationConfigLocations" ref="validationConfigLocations" />
+  </bean>
+    
+  <bean id="validator"
+        class="org.springmodules.validation.commons.DefaultBeanValidator" abstract="true">
+    <property name="validatorFactory">
+      <bean parent="validatorFactory" />
+    </property>
+    <property name="useFullyQualifiedClassName" value="false" />
+  </bean>
+
+  <!-- ===================== 入力チェック用コレクタ定義 ===================== -->
+  <!-- リストプロパティコレクタ -->
+  <bean id="validationListPropertyCollector"
+        class="jp.terasoluna.fw.batch.standard.ListPropertyCollector" abstract="true">
+    <property name="collectedDataHandlerFactory">
+      <bean class="jp.terasoluna.fw.batch.validation.ValidationExecutorFactory">
+        <property name="collectedDataHandlerFactory">
+          <bean class="jp.terasoluna.fw.batch.standard.ChunkerFactory">
+            <property name="chunkSize" ref="chunkSize" />
+          </bean>
+        </property>
+        <property name="validator"><bean parent="validator" /></property>
+        <property name="validationResultHandler"><bean parent="validationResultHandler" /></property>
+      </bean>
+    </property>
+  </bean>
+
+  <!-- 文字列配列プロパティコレクタ -->
+  <bean id="validationStringArrayPropertyCollector" 
+        class="jp.terasoluna.fw.batch.standard.StringArrayPropertyCollector" abstract="true">
+    <property name="collectedDataHandlerFactory">
+      <bean class="jp.terasoluna.fw.batch.validation.ValidationExecutorFactory">
+        <property name="collectedDataHandlerFactory">
+          <bean class="jp.terasoluna.fw.batch.standard.ChunkerFactory">
+            <property name="chunkSize" ref="chunkSize" />
+          </bean>
+        </property>
+        <property name="validator"><bean parent="validator" /></property>
+        <property name="validationResultHandler"><bean parent="validationResultHandler" /></property>
+      </bean>
+    </property>
+  </bean>
+
+  <!-- iBatisDBチャンクコレクタ -->
+  <bean id="validationIBatisDbChunkCollector"
+        class="jp.terasoluna.fw.batch.ibatissupport.IBatisDbCollectorImpl"
+        abstract="true">
+    <property name="queryRowHandleDAO" ref="queryRowHandleDAO" />
+    <property name="collectedDataHandlerFactory">
+      <bean class="jp.terasoluna.fw.batch.validation.ValidationExecutorFactory">
+        <property name="collectedDataHandlerFactory">
+          <bean class="jp.terasoluna.fw.batch.standard.ChunkerFactory">
+            <property name="chunkSize" ref="chunkSize" />
+          </bean>
+        </property>
+        <property name="validator"><bean parent="validator" /></property>
+        <property name="validationResultHandler"><bean parent="validationResultHandler" /></property>
+      </bean>
+    </property>
+  </bean>
+
+  <!-- ファイルチャンクコレクタ -->
+  <bean id="validationFileChunkCollector"
+        class="jp.terasoluna.fw.batch.standard.StandardFileCollector" abstract="true">
+    <property name="collectedDataHandlerFactory">
+      <bean class="jp.terasoluna.fw.batch.validation.ValidationExecutorFactory">
+        <property name="collectedDataHandlerFactory">
+          <bean class="jp.terasoluna.fw.batch.standard.ChunkerFactory">
+            <property name="chunkSize" ref="chunkSize" />
+          </bean>
+        </property>
+        <property name="validator"><bean parent="validator" /></property>
+        <property name="validationResultHandler"><bean parent="validationResultHandler" /></property>
+      </bean>
+    </property>
+  </bean>
+    
+</beans>

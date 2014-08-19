@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap
+ PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+ "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="jobControl">
+  <typeAlias alias="jobControlInfo" type="jp.terasoluna.fw.batch.init.JobControlInfo" />
+  <!-- ジョブ依頼情報取得 -->
+  <select id="SELECT_JOB_INFO_ALL" resultClass="jobControlInfo">
+    SELECT REQUEST_NO    AS jobRequestNo , 
+         JOB_ID        AS jobId , 
+         JOB_FILE      AS jobDiscriptorPath , 
+         PARAMETER     AS jobParameters, 
+         STATE         AS jobState, 
+         END_CODE      AS jobExitCode, 
+         UPDATE_TIME   AS updateTime, 
+         REGISTER_TIME AS registerTime
+        FROM JOB_CONTROL 
+     WHERE REQUEST_NO = (
+                         SELECT MIN(REQUEST_NO) 
+                         FROM JOB_CONTROL 
+                        WHERE STATE = '0'
+                      )  
+  </select>
+  
+  <!-- ジョブ依頼情報取得 -->
+  <select id="SELECT_JOB_INFO"  parameterClass="jobControlInfo" resultClass="jobControlInfo">
+    SELECT REQUEST_NO    AS jobRequestNo , 
+         JOB_ID        AS jobId , 
+         JOB_FILE      AS jobDiscriptorPath , 
+         PARAMETER     AS jobParameters, 
+         STATE         AS jobState, 
+         END_CODE      AS jobExitCode, 
+         UPDATE_TIME   AS updateTime, 
+         REGISTER_TIME AS registerTime
+      FROM JOB_CONTROL 
+     WHERE REQUEST_NO = ( 
+                       SELECT MIN(REQUEST_NO) 
+                         FROM JOB_CONTROL 
+                        WHERE STATE      = '0' 
+                          AND REQUEST_NO > #jobRequestNo#
+                      )  
+  </select>
+
+  <!-- ジョブ依頼情報更新 -->
+  <update id="UPDATE_JOB_START" parameterClass="jobControlInfo">
+    UPDATE JOB_CONTROL 
+       SET STATE       = '1' , 
+         UPDATE_TIME = current_timestamp , 
+         START_TIME  = current_timestamp 
+     WHERE REQUEST_NO = #jobRequestNo#     
+       AND JOB_ID     = #jobId# 
+       AND JOB_FILE   = #jobDiscriptorPath#
+       AND STATE      = '0'
+  </update>
+
+  <!-- ジョブ終了情報更新 -->
+  <update id="UPDATE_JOB_RESULT" parameterClass="jobControlInfo">
+    UPDATE JOB_CONTROL 
+       SET STATE       = #jobState# , 
+         END_CODE    = #jobExitCode# ,
+         UPDATE_TIME = current_timestamp 
+     WHERE REQUEST_NO = #jobRequestNo#
+  </update>
+
+</sqlMap>

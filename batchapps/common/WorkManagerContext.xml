@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation=
+       "http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
+
+  <!-- プレースホルダ -->
+  <import resource="classpath:common/PlaceHolderConfig.xml" />
+
+  <!-- ===================== ジョブStarter ===================== -->
+  <bean id="jobStarter"
+        class="jp.terasoluna.fw.batch.commonj.init.JobStarterImpl">
+    <property name="workManager" ref="manager" />
+    <property name="workListener" ref="listener" />
+  </bean>
+
+  <!-- ===================== ワークマネージャの設定 ===================== -->
+  <bean id="manager"
+        class="org.springframework.scheduling.commonj.WorkManagerTaskExecutor">
+    <property name="workManagerName" value="${workManagerName}" />
+    <property name="resourceRef" value="true" />
+  </bean>
+
+  <!-- ===================== ワークリスナー設定 ===================== -->
+  <bean id="listener"
+        class="jp.terasoluna.fw.batch.commonj.listener.JobExecutorListener">
+    <property name="jobResultInfoHandler" ref="jobResultInfoHandler" />
+  </bean>
+
+  <!-- ===================== SqlMapConfigファイルPath ===================== -->
+  <bean id="sqlMapConfigFileName" class="java.lang.String">
+    <constructor-arg value="common/sqlMapConfig.xml" />
+  </bean>
+  
+  <!-- ===================== ジョブ管理テーブル用ハンドラ ===================== -->
+  <bean id="JobControlTableHandler" class="jp.terasoluna.fw.batch.init.JobControlTableHandlerImpl">
+    <property name="queryDAO" ref="queryDAO" />
+    <property name="updateDAO" ref="updateDAO" />
+  </bean>
+
+  <!-- ===================== ジョブ結果用ハンドラ（JOB_RESULTテーブル） ===================== -->
+  <bean id="jobResultInfoHandler" class="jp.terasoluna.fw.batch.commonj.transaction.JobResultInfoHandlerImpl">
+    <property name="updateDAO" ref="updateDAO" />
+    <property name="transactionManager" ref="transactionManager" />
+  </bean>
+
+</beans>

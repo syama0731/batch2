@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation=
+       "http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
+
+  <!-- ===================== 監視(File)定義 ===================== -->
+  <!-- ジョブ終了ファイルチェッククラス -->
+  <bean id="endFileChecker" class="jp.terasoluna.fw.batch.init.EndFileChecker">
+    <property name="endFileDir" value="batchapps/sample/endfile" />
+  </bean>
+  
+  <!-- タスクの定義(実行間隔) -->
+  <!-- ※Commonj対応機能を使用する際にはWorkManagerTaskContext-batch.xmlの
+       設定が有効になるため以下の設定は無効になる -->
+  <bean id="scheduledTask" class="org.springframework.scheduling.timer.ScheduledTimerTask">
+    <!-- 8秒ごとにセット -->
+    <property name="period" value="8000" />
+    <property name="timerTask" ref="endFileChecker" />
+  </bean>
+
+  <!-- タイマーにタスクを登録  -->
+  <!-- ※Commonj対応機能を使用する際にはWorkManagerTaskContext-batch.xmlの
+       設定が有効になるため以下の設定は無効になる -->
+  <bean id="timerFactory" class="org.springframework.scheduling.timer.TimerFactoryBean">
+    <property name="daemon" value="false" />
+    <property name="scheduledTimerTasks">
+      <list>
+        <ref bean="scheduledTask" />
+      </list>
+    </property>
+  </bean>
+
+  <!-- BeanFactoryのキャッシュ有無 -->
+  <util:constant id="useCache" static-field="java.lang.Boolean.FALSE" />
+  
+  <!-- 親ジョブ前処理 -->
+  <util:list id="parentjobPreLogicList">
+  </util:list>
+
+  <!-- 親ジョブ後処理 -->
+  <util:list id="parentjobPostLogicList">
+  </util:list>
+
+  <!-- ジョブ前処理 -->
+  <util:list id ="jobPreLogicList">
+  </util:list>
+
+  <!-- ジョブ後処理 -->
+  <util:list id="jobPostLogicList">
+  </util:list>
+
+  <!-- 先頭チャンク前処理 -->
+  <util:list id="firstchunkPreLogicList">
+  </util:list>
+
+  <!-- 最終チャンク後処理 -->
+  <util:list id="lastchunkPostLogicList">
+  </util:list>
+
+  <!-- チャンクサイズ -->
+  <bean id="chunkSize" class="java.lang.Integer">
+    <constructor-arg value="20" />
+  </bean>
+
+  <!-- セーブポイントの使用有無 -->
+  <util:constant id="useSavepoint" static-field="java.lang.Boolean.FALSE" />
+
+  <!-- 処理状態の結果ハンドラ -->
+  <bean id="JobStatusSummarizer" class="jp.terasoluna.fw.batch.standard.StandardJobStatusSummarizer" />
+
+  <!-- 終了コードの定義 -->
+  <util:map id="exitCodeMap">
+    <entry key="ENDING_NORMALLY" value="0" />
+    <entry key="ENDING_ABNORMALLY" value="100" />
+    <entry key="SUSPENDING" value="200" />
+  </util:map>
+
+  <!-- チャンクキューサイズ -->
+  <bean id="chunkQueueLength" class="java.lang.Integer">
+    <constructor-arg value="10" />
+  </bean>
+
+  <!-- 分割キーキューサイズ -->
+  <bean id="partitionQueueLength" class="java.lang.Integer">
+    <constructor-arg value="10" />
+  </bean>
+
+  <!-- ===================== ジョブ監視 ===================== -->
+  <!-- ジョブ監視の有無 -->
+  <util:constant id="useMonitorable" static-field="java.lang.Boolean.FALSE" />
+
+  <!-- ジョブ監視上限値 -->
+  <bean id="manageableJobSize" class="java.lang.Integer">
+    <constructor-arg value="20" />
+  </bean>
+
+  <!-- ===================== SqlMapConfigファイルPath ===================== -->
+  <bean id="sqlMapConfigFileName" class="java.lang.String">
+    <constructor-arg value="common/sqlMapConfig.xml" />
+  </bean>
+  
+  <!-- ===================== 例外ハンドラ ===================== -->
+  <!-- ハンドラMap -->
+  <util:map id="exceptionHandlerMap">
+    <entry>
+      <key>
+        <bean class="jp.terasoluna.fw.batch.core.JobException" />
+      </key>
+      <bean class="jp.terasoluna.fw.batch.standard.StandardJobExceptionHandler" />
+    </entry>
+  </util:map>
+
+  <!-- デフォルトハンドラ -->
+  <bean id="defaultJobExceptionHandler" class="jp.terasoluna.fw.batch.standard.StandardJobExceptionHandler" />
+  
+  <!-- Throwableハンドラ -->
+  <bean id="throwableHandler" class="jp.terasoluna.fw.batch.standard.StandardThrowableHandler" />
+  
+  <!-- ===================== ハンドラ定義 ===================== -->
+  <!-- ビジネスロジック実行結果用 -->
+  <bean id="BLogicResultHandler"
+        class="jp.terasoluna.fw.batch.standard.StandardBLogicResultHandler">
+    <property name="messageAccessor" ref="messageAccessor" />
+  </bean>
+
+  <!-- トランザクション処理を行うビジネスロジック実行結果用 -->
+  <bean id="TransactionalBLogicResultHandler"
+        class="jp.terasoluna.fw.batch.springsupport.transaction.TransactionalBLogicResultHandler" >
+    <property name="messageAccessor" ref="messageAccessor" />
+  </bean>
+
+  <!-- 対象データ取得結果用 -->
+  <bean id="CollectorResultHandler"
+        class="jp.terasoluna.fw.batch.standard.StandardCollectorResultHandler" />
+
+  <!-- バッチ更新処理結果用-->
+  <bean id="batchUpdateResultHandler"
+        class="jp.terasoluna.fw.batch.standard.StandardBatchUpdateResultHandler" />
+
+  <!-- サポート処理実行結果用 -->
+  <bean id="supportLogicResultHandler"
+        class="jp.terasoluna.fw.batch.standard.StandardSupportLogicResultHandler" />
+
+  <!-- トランザクション処理を行うサポート処理実行結果用 -->
+  <bean id="transactionalSupportLogicResultHandler"
+        class="jp.terasoluna.fw.batch.springsupport.transaction.TransactionalSupportLogicResultHandler" />
+    
+  <!-- ===================== SupportProcessor名称定義 ===================== -->
+  <!-- 親ジョブ前処理 -->
+  <bean id="parentJobPreProcessorName" class="java.lang.String">
+    <constructor-arg value="ParentjobPreProcessor" />
+  </bean>
+
+  <!-- 親ジョブ後処理 -->
+  <bean id="parentJobPostProcessorName" class="java.lang.String">
+    <constructor-arg value="ParentjobPostProcessor" />
+  </bean>
+
+  <!-- ジョブ前処理 -->
+  <bean id="jobPreProcessorName" class="java.lang.String">
+    <constructor-arg value="JobPreProcessor" />
+  </bean>
+
+  <!-- ジョブ後処理 -->
+  <bean id="jobPostProcessorName" class="java.lang.String">
+    <constructor-arg value="JobPostProcessor" />
+  </bean>
+
+  <!-- 最初チャンク前処理 -->
+  <bean id="firstchunkPreProcessorName" class="java.lang.String">
+    <constructor-arg value="FirstchunkPreProcessor" />
+  </bean>
+
+  <!-- 最後チャンク後処理 -->
+  <bean id="lastchunkPostProcessorName" class="java.lang.String">
+    <constructor-arg value="LastchunkPostProcessor" />
+  </bean>
+  
+  <!-- ===================== コントロールブレイク定義 ===================== -->
+  <!-- ブレイクキー毎のハンドラクラス情報保持のBean -->
+  <bean id="chunkControlBreakDefItem" class="jp.terasoluna.fw.batch.controlbreak.ControlBreakDefItem" />
+ 
+  <!-- コントロールブレイクの設定用 -->
+  <util:list id="controlBreakDefItemList">
+  </util:list>
+  
+  <!-- トランスチャンクコントロールブレイクの設定用 -->
+  <util:list id="transChunkControlBreakDefItemList">
+  </util:list>
+
+  <!-- ================ WorkManager & TimerManager用 JNDI設定 ===================== -->
+  <bean id="jndiTemplateForWorkManager" class="org.springframework.jndi.JndiTemplate" />
+
+  <bean id="jndiTemplateForTimerManager" class="org.springframework.jndi.JndiTemplate" />
+
+</beans>

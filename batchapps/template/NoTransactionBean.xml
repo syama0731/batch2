@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation=
+       "http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
+
+  <!-- プレースホルダ -->
+  <import resource="classpath:common/PlaceHolderConfig.xml" />
+
+  <!-- ===================== マネージャ定義 ===================== -->
+  <!-- 一段目のマネージャ -->
+  <bean id="jobManager" parent="baseManager">
+    <property name="name" value="noTransactionJobManager" />
+    <property name="collector" ref="collector" />
+    <property name="workQueueFactory">
+      <bean class="${workQueueFactory.class}">
+        <property name="workerExecutorService" ref="workerExecutorService" />
+        <property name="queueLength" ref="chunkQueueLength" />
+        <property name="queueProcessor" ref="noTransactionQueueProcessor" />
+      </bean>
+    </property>
+    <!-- ジョブ前処理 -->
+    <property name="preProcessor" ref="jobPreProcessor" />
+    <!-- ジョブ後処理 -->
+    <property name="postProcessor" ref="jobPostProcessor" />
+  </bean>
+
+  <!-- ジョブ前処理 -->
+  <bean id="jobPreProcessor" parent="standardSupportProcessor">
+    <property name="supportProcessorName" ref="jobPreProcessorName" />
+    <property name="supportLogicList" ref="jobPreLogicList" />
+  </bean>
+
+  <!-- ジョブ後処理 -->
+  <bean id="jobPostProcessor" parent="standardSupportProcessor">
+    <property name="supportProcessorName" ref="jobPostProcessorName" />
+    <property name="supportLogicList" ref="jobPostLogicList" />
+  </bean>
+
+  <!-- ===================== キュープロセッサ定義 ===================== -->
+  <bean id="noTransactionQueueProcessor" parent="baseQueueProcessor">
+    <property name="name" value="noTransactionQueueProcessor" />
+    <property name="worker" ref="noTransactionWorker" />
+  </bean>
+
+  <!-- ===================== ワーカ定義 ===================== -->
+  <bean id="noTransactionWorker" parent="baseWorker">
+    <property name="blogicExecutor" ref="blogicExecutor" />
+    <property name="exceptionHandlerMap" ref="exceptionHandlerMap" />
+    <property name="defaultJobExceptionHandler" ref="defaultJobExceptionHandler" />
+    <property name="batchUpdateProcessor" ref="batchUpdateProcessor" />
+    <property name="batchUpdateResultHandler" ref="batchUpdateResultHandler" />
+  </bean>
+
+  <bean id="batchUpdateProcessor" class="jp.terasoluna.fw.batch.standard.StandardBatchUpdateProcessor">
+    <property name="updateDAO" ref="updateDAO" />
+  </bean>
+  
+  <bean id="blogicExecutor" class="jp.terasoluna.fw.batch.core.StandardBLogicExecutor">
+    <property name="blogic" ref="blogic" />
+    <property name="blogicResultHandler" ref="BLogicResultHandler" />
+    <property name="exceptionHandlerMap" ref="exceptionHandlerMap" />
+    <property name="defaultJobExceptionHandler" ref="defaultJobExceptionHandler" />
+    <property name="throwableHandler" ref="throwableHandler" />
+  </bean>
+
+  <!-- JobStatus設定 -->
+  <bean id="MonitorableJobStatus" class="jp.terasoluna.fw.batch.monitor.MonitorableJobStatus" scope="prototype">
+    <property name="mbeanRegister" ref="MBeanRegister" />
+    <property name="partitionNo" value="-1" />
+  </bean>
+  <bean id="JobStatus" class="jp.terasoluna.fw.batch.core.JobStatus" scope="prototype">
+    <property name="partitionNo" value="-1" />
+  </bean>
+  <!-- スレッドプールのスレッド数 -->
+  <bean id="threadSize" class="java.lang.Integer">
+    <constructor-arg value="1" />
+  </bean>
+</beans>

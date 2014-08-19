@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation=
+       "http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
+  
+  <!-- ===================== マネージャ定義 ===================== -->
+  <!-- 非同期バッチ起動用のマネージャ -->
+  <bean id="jobManager" class="jp.terasoluna.fw.batch.init.NullWorker" />
+
+  <!-- ジョブ分割コンテクスト -->
+  <bean name="jobContext" class="jp.terasoluna.fw.batch.springsupport.init.AsyncJobContext" scope="prototype"/>
+
+  <!-- 監視用JobStatus設定 -->
+  <bean id="MonitorableJobStatus" class="jp.terasoluna.fw.batch.monitor.MonitorableJobStatus" scope="prototype">
+    <property name="mbeanRegister" ref="MBeanRegister" />
+    <property name="partitionNo" value="-1" />
+  </bean>
+  
+  <!-- JobStatus設定 -->
+  <bean id="JobStatus" class="jp.terasoluna.fw.batch.core.JobStatus" scope="prototype">
+    <property name="partitionNo" value="-1" />
+  </bean>
+</beans>

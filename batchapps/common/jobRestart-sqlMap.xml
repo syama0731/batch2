@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap
+ PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+ "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="jobRestart">
+    <typeAlias alias="jobRestartInfo" type="jp.terasoluna.fw.batch.restart.StandardJobRestartInfo" />
+    <!-- リスタート情報更新 -->
+    <update id="UPDATE_JOB_RESTART_POINT" parameterClass="jobRestartInfo">
+        UPDATE RESTART_CONTROL 
+           SET RESTART_POINT = #restartPoint# , 
+               JOB_CONTEXT   = #jobContext#, 
+               STATE         = #state#, 
+               UPDATE_TIME   = current_timestamp 
+         WHERE REQUEST_NO   = #requestNo# 
+           AND JOB_ID       = #jobId#  
+           AND PARTITION_NO = #partitionNo#
+    </update>
+
+    <!-- リスタート情報更新 -->
+    <insert id="INSERT_JOB_RESTART_POINT" parameterClass="jobRestartInfo">
+        INSERT INTO 
+        RESTART_CONTROL (REQUEST_NO , JOB_ID , PARTITION_NO , PARTITION_KEY ,
+                         RESTART_POINT , JOB_CONTEXT , STATE , UPDATE_TIME , 
+                         REGISTER_TIME) 
+        VALUES(#requestNo# , #jobId# , #partitionNo# , #partitionKey# , 
+               #restartPoint# , #jobContext# , #state#   , current_timestamp , 
+               current_timestamp) 
+    </insert>
+
+    <!-- ※リスタート情報クリア用SQLは以下の二つから選択することが出来る。 -->
+    <!-- ※デフォルトSQLは対象データ削除である。 -->
+    <!-- リスタート情報クリア（処理完了後対象データの状態更新） -->
+    <update id="UPDATE_JOB_RESTART_CLEAR" parameterClass="jobRestartInfo">
+        UPDATE RESTART_CONTROL 
+           SET STATE       = #state# , 
+               UPDATE_TIME = current_timestamp 
+         WHERE REQUEST_NO   = #requestNo# 
+           AND JOB_ID       = #jobId#  
+           AND PARTITION_NO = #partitionNo#
+    </update>
+    
+    <!-- リスタート情報クリア（処理完了後対象データ削除） -->
+    <delete id="DELETE_JOB_RESTART_CLEAR" parameterClass="jobRestartInfo">
+        DELETE 
+          FROM RESTART_CONTROL  
+         WHERE REQUEST_NO = #requestNo# 
+           AND JOB_ID     = #jobId#  
+    </delete>
+    
+    <!-- リスタート依頼情報取得 -->
+    <select id="SELECT_JOB_RESTART_INFO" parameterClass="jobRestartInfo" resultClass="jobRestartInfo">
+        SELECT REQUEST_NO    AS requestNo, 
+               JOB_ID        AS jobId, 
+               PARTITION_KEY AS partitionKey, 
+               RESTART_POINT AS restartPoint, 
+               JOB_CONTEXT   AS jobContext, 
+               STATE         AS state, 
+               UPDATE_TIME   AS updateTime,
+               REGISTER_TIME AS registerTime 
+          FROM RESTART_CONTROL 
+         WHERE REQUEST_NO   = #requestNo# 
+           AND JOB_ID       = #jobId#  
+           AND PARTITION_NO = #partitionNo#
+    </select>
+
+</sqlMap>

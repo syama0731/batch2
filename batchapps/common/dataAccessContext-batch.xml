@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation=
+       "http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
+
+  <!-- プレースホルダ -->
+  <import resource="classpath:common/PlaceHolderConfig.xml" />
+    
+  <!-- Basicデータソース -->
+  <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+    <property name="driverClassName" value="${jdbc.driverClassName}" />
+    <property name="url" value="${jdbc.url}" />
+    <property name="username" value="${jdbc.username}" />
+    <property name="password" value="${jdbc.password}" />
+    <property name="poolPreparedStatements" value="true" />
+    <property name="defaultAutoCommit" value="false" />
+    <!-- property name="maxActive" ref="threadSize"/ -->
+  </bean>
+
+  <!-- リソースバンドル（DBメッセージリソース利用時）用DAOの設定 -->
+  <!-- 
+  <bean id="DBMessageResourceDAO" 
+        class="jp.terasoluna.fw.message.DBMessageResourceDAOImpl">
+    <property name="dataSource" ref="dataSource" />
+    <property name="tableName" value="MESSAGES" />
+    <property name="codeColumn" value="CODE" />
+    <property name="messageColumn" value="MESSAGE" />
+  </bean>
+  -->
+
+  <!-- リソースバンドルの設定（DBメッセージリソース利用時） -->
+  <!--
+  <bean id="messageSource" 
+        class="jp.terasoluna.fw.message.DataSourceMessageSource">
+    <property name="parentMessageSource" ref="parentMessageSource" />
+    <property name="dbMessageResourceDAO" ref="DBMessageResourceDAO" />
+  </bean>
+  <bean id="parentMessageSource" 
+        class="org.springframework.context.support.ResourceBundleMessageSource">
+    <property name="basenames" value="ApplicationResources,errors" />
+  </bean>
+  -->
+
+  <!-- メッセージ取得用クラスの設定：再定義（DBメッセージリソース利用時） -->
+  <!--
+  <bean id="messageAccessor"
+        class="jp.terasoluna.fw.batch.springsupport.messages.MessageAccessorImpl" />
+  -->
+
+  <!-- iBATIS データベース層のためのSQlMapの設定 -->
+  <bean id="sqlMapClient" class="org.springframework.orm.ibatis.SqlMapClientFactoryBean">
+    <property name="dataSource" ref="dataSource" />
+    <property name="configLocation" ref="sqlMapConfigFileName" />
+  </bean>
+
+  <!-- 単一のJDBCデータソース向けのトランザクションマネージャ -->
+  <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <property name="dataSource" ref="dataSource" />
+  </bean>
+
+  <!-- トランザクションプロキシのベース定義となる親Bean定義。
+     - 子のBean定義で属性をオーバーライドすることができる。-->
+  <bean id="baseTransactionProxy" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean"
+        abstract="true">
+    <property name="transactionManager" ref="transactionManager" />
+    <!--<property name="postInterceptors" ref="debug" />-->
+  </bean>
+
+  <!-- ===================== DAO定義: IBATIS実装 ===================== -->
+  <!-- 照会系のDAO -->
+  <bean id="queryDAO" class="jp.terasoluna.fw.dao.ibatis.QueryDAOiBatisImpl">
+    <property name="sqlMapClient" ref="sqlMapClient" />
+  </bean>
+
+  <!-- 更新系のDAO -->
+  <bean id="updateDAO" class="jp.terasoluna.fw.dao.ibatis.UpdateDAOiBatisImpl">
+    <property name="sqlMapClient" ref="sqlMapClient" />
+  </bean>
+
+  <!-- ストアドプロシジャ用のDAO -->
+  <bean id="spDAO" class="jp.terasoluna.fw.dao.ibatis.StoredProcedureDAOiBatisImpl">
+    <property name="sqlMapClient" ref="sqlMapClient" />
+  </bean>
+
+  <!-- Rowハンドラ用のDAO -->
+  <bean id="queryRowHandleDAO" class="jp.terasoluna.fw.dao.ibatis.QueryRowHandleDAOiBatisImpl">
+    <property name="sqlMapClient" ref="sqlMapClient"/>
+  </bean>
+
+</beans>
