@@ -15,7 +15,7 @@
 	<classpathentry kind="lib" path="lib/postgresql-8.2-508.jdbc3.jar"/>
 	<classpathentry kind="lib" path="lib/spring.jar"/>
 	<classpathentry kind="lib" path="lib/spring-modules-validation.jar"/>
-	<classpathentry kind="lib" path="lib/terasoluna-batch.jar"/>
+	<classpathentry kind="lib" path="lib/terasoluna-batch.jar" sourcepath="terasoluna/src/terasoluna-batch4j-src_2.0.3.0.zip"/>
 	<classpathentry kind="lib" path="lib/commons-logging-1.1.1.jar"/>
 	<classpathentry kind="lib" path="lib/ibatis-2.3.4.726.jar"/>
 	<classpathentry kind="lib" path="lib/log4j-1.2.15.jar"/>

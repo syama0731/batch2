@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation=
+       "http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.0.xsd">
+		
+	<!-- import transaction model template definition -->
+	<import resource="classpath:template/ChunkTransactionBean.xml"/>
+	<import resource="classpath:template/FileAccessBean.xml" />
+
+	<!-- SqlMapConfig -->
+    <bean id="sqlMapConfigFileName" class="java.lang.String">
+	    <constructor-arg value="sample/BL0001/BL0001_sqlMapConfig.xml" />
+    </bean>
+    	
+	<!-- JobContext -->
+	<bean id="jobContext" class="sample.BL0001.BL0001JobContext" />
+		
+	<!-- PreBLogic -->
+	<util:list id="jobPreLogicList">
+		<bean class="sample.BL0001.BL0001PreBLogic" />
+	</util:list>
+    
+    <!-- BLogic -->
+    <bean id="blogic" class="sample.BL0001.BL0001BLogic"/>
+        
+    <!-- PostBLogic -->
+    <util:list id="jobPostLogicList">
+        <bean class="sample.BL0001.BL0001PostBLogic" />
+    </util:list>
+    		
+	<!-- Collector -->
+	<bean id="collector" class="jp.terasoluna.fw.batch.standard.StandardFileCollector">
+	    <property name="fileQueryDao" ref="csvFileQueryDAO" />
+	    <property name="inputFileName" value="input/BL0001Input.csv" />
+	    <property name="resultClass">
+	        <bean class="sample.BL0001.BL0001Data" />
+	    </property>
+	    <property name="readNextLine" value="false" />
+	    <property name="collectedDataHandlerFactory">
+	        <bean class="jp.terasoluna.fw.batch.standard.ChunkerFactory">
+	            <property name="chunkSize" ref="chunkSize" />
+	        </bean>
+	    </property>
+	</bean>
+
+    <!-- ChunkSize -->
+	<bean id="chunkSize" class="java.lang.Integer" >
+	    <constructor-arg index="0" value="50" />
+	</bean>
+</beans>
