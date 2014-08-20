@@ -33,6 +33,8 @@
     </util:list>
     		
 	<!-- Collector -->
+	<!-- file collector -->
+	<!-- 
 	<bean id="collector" class="jp.terasoluna.fw.batch.standard.StandardFileCollector">
 	    <property name="fileQueryDao" ref="csvFileQueryDAO" />
 	    <property name="inputFileName" value="input/BL0001Input.csv" />
@@ -46,9 +48,21 @@
 	        </bean>
 	    </property>
 	</bean>
-
+    -->
+    
+    <!-- db collector -->
+    <bean id="collector" class="jp.terasoluna.fw.batch.ibatissupport.IBatisDbCollectorImpl">
+        <property name="sql" value="BL0001.findAll" />
+        <property name="queryRowHandleDAO" ref="queryRowHandleDAO" />
+        <property name="collectedDataHandlerFactory">
+            <bean class="jp.terasoluna.fw.batch.standard.ChunkerFactory">
+                <property name="chunkSize" ref="chunkSize" />
+            </bean>
+        </property>
+    </bean>
+    
     <!-- ChunkSize -->
 	<bean id="chunkSize" class="java.lang.Integer" >
-	    <constructor-arg index="0" value="50" />
+	    <constructor-arg index="0" value="3" />
 	</bean>
 </beans>

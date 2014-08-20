@@ -3,5 +3,14 @@
  "http://ibatis.apache.org/dtd/sql-map-2.dtd">
  	
 <sqlMap namespace="BL0001">
-	
+    
+    <select id="findAll" resultClass="sample.BL0001.BL0001Data">
+        SELECT
+            ID as id,
+            ITEM as item,
+            PRICE as price,
+            CUSTOMER as customer
+        FROM
+            SALES
+    </select>	
 </sqlMap>
