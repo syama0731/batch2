@@ -14,7 +14,7 @@ public class BL0001Collector extends AbstractCollector<BL0001JobContext> {
 		
 		int collected = 0;
 		
-		BL0001Data data = new BL0001Data();
+		BL0001Sale data = new BL0001Sale();
 		
 		collectedDataHandler.handle(data, collected);
 		jobStatus.incrementCollected();

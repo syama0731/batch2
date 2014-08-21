@@ -4,7 +4,7 @@
  	
 <sqlMap namespace="BL0001">
     
-    <select id="findAll" resultClass="sample.BL0001.BL0001Data">
+    <select id="findAll" resultClass="sample.BL0001.BL0001Sale">
         SELECT
             ID as id,
             ITEM as item,
@@ -13,4 +13,18 @@
         FROM
             SALES
     </select>	
+    
+    <insert id="insertItemSale" parameterClass="sample.BL0001.BL0001ItemSale">
+        INSERT INTO
+            ITEMSALE (
+                ITEM,
+                TOTAL_COUNT,
+                TOTAL_SALE
+            ) VALUES (
+                #item#,
+                #totalCount#,
+                #totalSale#
+            )
+    </insert>
+    
 </sqlMap>

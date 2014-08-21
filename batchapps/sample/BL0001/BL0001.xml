@@ -8,7 +8,7 @@
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.0.xsd">
 		
 	<!-- import transaction model template definition -->
-	<import resource="classpath:template/ChunkTransactionBean.xml"/>
+	<import resource="classpath:template/ChunkTransactionForControlBreakBean.xml"/>
 	<import resource="classpath:template/FileAccessBean.xml" />
 
 	<!-- SqlMapConfig -->
@@ -39,7 +39,7 @@
 	    <property name="fileQueryDao" ref="csvFileQueryDAO" />
 	    <property name="inputFileName" value="input/BL0001Input.csv" />
 	    <property name="resultClass">
-	        <bean class="sample.BL0001.BL0001Data" />
+	        <bean class="sample.BL0001.BL0001Sale" />
 	    </property>
 	    <property name="readNextLine" value="false" />
 	    <property name="collectedDataHandlerFactory">
@@ -50,7 +50,36 @@
 	</bean>
     -->
     
+    <bean id="collector" class="jp.terasoluna.fw.batch.standard.StandardFileCollector">
+        <property name="fileQueryDao" ref="csvFileQueryDAO" />
+        <property name="inputFileName" value="input/BL0001Input.csv" />
+        <property name="resultClass">
+            <bean class="sample.BL0001.BL0001Sale" />
+        </property>
+        <property name="readNextLine" value="false" />
+        <property name="collectedDataHandlerFactory">
+            <bean class="jp.terasoluna.fw.batch.controlbreak.ControlBreakChunkerFactory">
+                <property name="controlBreakDef" ref="controlBreakDef" />
+                <property name="chunkSize" ref="chunkSize" />
+            </bean>
+        </property>
+    </bean>
+    
+    <bean id="chunkControlBreakDefItem" class="jp.terasoluna.fw.batch.controlbreak.ControlBreakDefItem">
+        <property name="breakKey">
+            <list>
+                <value>item</value>
+            </list>
+        </property>
+        <property name="controlBreakHandler" >
+            <bean class="sample.BL0001.BL0001ControlBreakHandler">
+                <property name="updateDA0" ref="updateDAO"/>
+            </bean>
+        </property>
+    </bean>
+    
     <!-- db collector -->
+    <!-- 
     <bean id="collector" class="jp.terasoluna.fw.batch.ibatissupport.IBatisDbCollectorImpl">
         <property name="sql" value="BL0001.findAll" />
         <property name="queryRowHandleDAO" ref="queryRowHandleDAO" />
@@ -60,6 +89,7 @@
             </bean>
         </property>
     </bean>
+     -->
     
     <!-- ChunkSize -->
 	<bean id="chunkSize" class="java.lang.Integer" >
