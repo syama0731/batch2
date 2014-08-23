@@ -14,6 +14,21 @@
             SALES
     </select>	
     
+    <insert id="insertSales" parameterClass="sample.BL0001.BL0001Sale">
+        INSERT INTO
+            SALES (
+                ID,
+                ITEM,
+                PRICE,
+                CUSTOMER
+            ) VALUES (
+                #id#,
+                #item#,
+                #price#,
+                #customer#
+            )
+    </insert>
+    
     <insert id="insertItemSale" parameterClass="sample.BL0001.BL0001ItemSale">
         INSERT INTO
             ITEMSALE (

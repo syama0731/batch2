@@ -8,7 +8,8 @@
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.0.xsd">
 		
 	<!-- import transaction model template definition -->
-	<import resource="classpath:template/ChunkTransactionForControlBreakBean.xml"/>
+	<import resource="classpath:template/ChunkTransactionBean.xml"/>
+	<!-- <import resource="classpath:template/ChunkTransactionForControlBreakBean.xml"/> -->
 	<import resource="classpath:template/FileAccessBean.xml" />
 
 	<!-- SqlMapConfig -->
@@ -25,7 +26,16 @@
 	</util:list>
     
     <!-- BLogic -->
-    <bean id="blogic" class="sample.BL0001.BL0001BLogic"/>
+    <bean id="blogic" class="sample.BL0001.BL0001BLogic">
+        <property name="updateDAO" ref="updateDAO" />
+        <property name="fileLineWriter">
+            <bean class="jp.terasoluna.fw.file.dao.standard.CSVFileLineWriter" destroy-method="closeFile">
+                <constructor-arg index="0" value="output/BL0001Output.csv" />
+                <constructor-arg index="1" value="sample.BL0001.BL0001Sale" />
+                <constructor-arg index="2" ref="columnFormatterMap" />
+            </bean>
+        </property>
+    </bean>
         
     <!-- PostBLogic -->
     <util:list id="jobPostLogicList">
@@ -34,10 +44,9 @@
     		
 	<!-- Collector -->
 	<!-- file collector -->
-	<!-- 
 	<bean id="collector" class="jp.terasoluna.fw.batch.standard.StandardFileCollector">
 	    <property name="fileQueryDao" ref="csvFileQueryDAO" />
-	    <property name="inputFileName" value="input/BL0001Input.csv" />
+	    <property name="inputFileName" value="/Users/sin/git/batch2/terasoluna-batch-blank/input/BL0001Input.csv" />
 	    <property name="resultClass">
 	        <bean class="sample.BL0001.BL0001Sale" />
 	    </property>
@@ -48,8 +57,9 @@
 	        </bean>
 	    </property>
 	</bean>
-    -->
     
+    <!--  control break only -->
+    <!-- 
     <bean id="collector" class="jp.terasoluna.fw.batch.standard.StandardFileCollector">
         <property name="fileQueryDao" ref="csvFileQueryDAO" />
         <property name="inputFileName" value="input/BL0001Input.csv" />
@@ -64,6 +74,68 @@
             </bean>
         </property>
     </bean>
+     -->
+     
+     <!-- validate only -->   
+    <!-- 
+     <bean id="collector" class="jp.terasoluna.fw.batch.standard.StandardFileCollector">
+        <property name="fileQueryDao" ref="csvFileQueryDAO" />
+        <property name="inputFileName" value="input/BL0001Input.csv" />
+        <property name="resultClass">
+            <bean class="sample.BL0001.BL0001Sale" />
+        </property>
+        <property name="readNextLine" value="false" />
+        <property name="collectedDataHandlerFactory">
+            <bean class="jp.terasoluna.fw.batch.validation.ValidationExecutorFactory">
+                <property name="validator">
+                    <bean parent="validator" />
+                </property>
+                <property name="validationResultHandler" ref="validationResultHandler" />
+                <property name="collectedDataHandlerFactory">
+                    <bean class="jp.terasoluna.fw.batch.standard.ChunkerFactory">
+                        <property name="chunkSize" ref="chunkSize" />
+                    </bean>
+                </property>
+            </bean>
+        </property>
+    </bean>
+     --> 
+     
+     <!-- control break and validate -->
+     <!-- 
+     <bean id="collector" class="jp.terasoluna.fw.batch.standard.StandardFileCollector">
+        <property name="fileQueryDao" ref="csvFileQueryDAO" />
+        <property name="inputFileName" value="input/BL0001Input.csv" />
+        <property name="resultClass">
+            <bean class="sample.BL0001.BL0001Sale" />
+        </property>
+        <property name="readNextLine" value="false" />
+        <property name="collectedDataHandlerFactory">
+            <bean class="jp.terasoluna.fw.batch.validation.ValidationExecutorFactory">
+                <property name="validator">
+                    <bean parent="validator" />
+                </property>
+                <property name="validationResultHandler" ref="validationResultHandler" />
+                <property name="collectedDataHandlerFactory">
+                    <bean class="jp.terasoluna.fw.batch.controlbreak.ControlBreakChunkerFactory">
+                        <property name="controlBreakDef" ref="controlBreakDef" />
+                        <property name="chunkSize" ref="chunkSize" />
+                    </bean>
+                </property>
+            </bean>
+        </property>
+    </bean>
+     -->
+    <bean id="validationResultHandler" class="jp.terasoluna.fw.batch.validation.StandardValidationResultHandler">
+        <property name="errorContinueFlg" value="true" />
+        <property name="messageAccessor" ref="messageAccessor"/>
+    </bean>
+    
+    <util:list id="validationConfigLocations">
+            <value>/common/validator-rules.xml</value>
+            <value>/common/validator-rules-ex.xml</value>
+            <value>/sample/BL0001/validation.xml</value>
+    </util:list>
     
     <bean id="chunkControlBreakDefItem" class="jp.terasoluna.fw.batch.controlbreak.ControlBreakDefItem">
         <property name="breakKey">
@@ -78,7 +150,8 @@
         </property>
     </bean>
     
-    <!-- db collector -->
+    
+    <!-- db collector --> 
     <!-- 
     <bean id="collector" class="jp.terasoluna.fw.batch.ibatissupport.IBatisDbCollectorImpl">
         <property name="sql" value="BL0001.findAll" />
@@ -90,9 +163,17 @@
         </property>
     </bean>
      -->
-    
+     
     <!-- ChunkSize -->
 	<bean id="chunkSize" class="java.lang.Integer" >
 	    <constructor-arg index="0" value="3" />
 	</bean>
+	
+	<!-- Exception Handler Map -->
+	<util:map id="exceptionHandlerMap">
+	   <entry>
+	       <key><bean class="sample.exception.SampleException" /></key>
+	       <bean class="sample.exception.SampleExceptionHandler" />
+	   </entry>
+	</util:map>
 </beans>
