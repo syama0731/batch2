@@ -8,8 +8,8 @@
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.0.xsd">
 		
 	<!-- import transaction model template definition -->
-	<import resource="classpath:template/ChunkTransactionBean.xml"/>
-	<!-- <import resource="classpath:template/ChunkTransactionForControlBreakBean.xml"/> -->
+	<!-- <import resource="classpath:template/ChunkTransactionBean.xml"/> -->
+	<import resource="classpath:template/ChunkTransactionForControlBreakBean.xml"/>
 	<import resource="classpath:template/FileAccessBean.xml" />
 
 	<!-- SqlMapConfig -->
@@ -44,6 +44,7 @@
     		
 	<!-- Collector -->
 	<!-- file collector -->
+	<!-- 
 	<bean id="collector" class="jp.terasoluna.fw.batch.standard.StandardFileCollector">
 	    <property name="fileQueryDao" ref="csvFileQueryDAO" />
 	    <property name="inputFileName" value="/Users/sin/git/batch2/terasoluna-batch-blank/input/BL0001Input.csv" />
@@ -57,7 +58,23 @@
 	        </bean>
 	    </property>
 	</bean>
-    
+     -->
+     
+     <!-- extension class -->
+     <!-- 
+     <bean id="collector" class="sample.BL0001.BL0001Collector">
+        <property name="fileQueryDAO" ref="csvFileQueryDAO" />
+        <property name="inputFileName" value="/Users/sin/git/batch2/terasoluna-batch-blank/input/BL0001Input.csv" />
+        <property name="resultClass">
+            <bean class="sample.BL0001.BL0001Sale" />
+        </property>
+        <property name="collectedDataHandlerFactory">
+            <bean class="jp.terasoluna.fw.batch.standard.ChunkerFactory">
+                <property name="chunkSize" ref="chunkSize" />
+            </bean>
+        </property>
+    </bean>
+      -->
     <!--  control break only -->
     <!-- 
     <bean id="collector" class="jp.terasoluna.fw.batch.standard.StandardFileCollector">
@@ -126,6 +143,30 @@
         </property>
     </bean>
      -->
+     
+     <!-- control break and validate with extended collector -->
+     <bean id="collector" class="sample.BL0001.BL0001Collector">
+        <property name="fileQueryDAO" ref="csvFileQueryDAO" />
+        <property name="inputFileName" value="input/BL0001Input.csv" />
+        <property name="resultClass">
+            <bean class="sample.BL0001.BL0001Sale" />
+        </property>
+        <property name="collectedDataHandlerFactory">
+            <bean class="jp.terasoluna.fw.batch.validation.ValidationExecutorFactory">
+                <property name="validator">
+                    <bean parent="validator" />
+                </property>
+                <property name="validationResultHandler" ref="validationResultHandler" />
+                <property name="collectedDataHandlerFactory">
+                    <bean class="jp.terasoluna.fw.batch.controlbreak.ControlBreakChunkerFactory">
+                        <property name="controlBreakDef" ref="controlBreakDef" />
+                        <property name="chunkSize" ref="chunkSize" />
+                    </bean>
+                </property>
+            </bean>
+        </property>
+    </bean>
+    
     <bean id="validationResultHandler" class="jp.terasoluna.fw.batch.validation.StandardValidationResultHandler">
         <property name="errorContinueFlg" value="true" />
         <property name="messageAccessor" ref="messageAccessor"/>

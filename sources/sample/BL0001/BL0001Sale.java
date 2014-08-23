@@ -9,19 +9,19 @@ public class BL0001Sale {
 	
 	@InputFileColumn(columnIndex = 0)
 	@OutputFileColumn(columnIndex = 0)
-	private int id;
+	private int id = 0;
 	
 	@InputFileColumn(columnIndex = 1)
 	@OutputFileColumn(columnIndex = 1)
-	private String item;
+	private String item = null;
 	
 	@InputFileColumn(columnIndex = 2)
 	@OutputFileColumn(columnIndex = 2)
-	private int price;
+	private int price = 0;
 	
 	@InputFileColumn(columnIndex = 3)
 	@OutputFileColumn(columnIndex = 3)
-	private String customer;
+	private String customer = null;
 
 	public int getId() {
 		return id;

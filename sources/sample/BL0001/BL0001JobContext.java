@@ -12,7 +12,7 @@ public class BL0001JobContext extends JobContext {
 	
 	private int count = 0;
 	
-	private int preview = 0;
+	private BL0001Sale preview = new BL0001Sale();
 	
 	private int totalSale = 0;
 	
@@ -20,7 +20,7 @@ public class BL0001JobContext extends JobContext {
 		return this.count;
 	}
 	
-	public int getPreview() {
+	public BL0001Sale getPreview() {
 		return this.preview;
 	}
 	
@@ -28,8 +28,8 @@ public class BL0001JobContext extends JobContext {
 		this.count++;
 	}
 	
-	public void setPreview(int value) {
-		this.preview = value;
+	public void setPreview(BL0001Sale preview) {
+		this.preview = preview;
 	}
 	
 	public void resetCount() {
